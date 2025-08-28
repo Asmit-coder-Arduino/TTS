@@ -1,6 +1,15 @@
 # Overview
 
-This is a text-to-speech application built with React/TypeScript frontend and Express.js backend that integrates with ElevenLabs API to generate audio from text. The application allows users to create multiple paragraphs with different voice settings, languages (English and Hindi), and voice controls like speed, pitch, stability, and silence intervals between paragraphs.
+VoiceForge AI is a beautiful, modern text-to-speech application built with React/TypeScript frontend and Express.js backend that integrates with ElevenLabs API to generate high-quality audio from text. The application features a stunning glassmorphism design with gradient backgrounds, smooth animations, and comprehensive voice controls. Users can create multiple paragraphs with different voice settings, languages (English and Hindi), and fine-tune voice parameters like speed, pitch, stability, and silence intervals between paragraphs.
+
+## Recent Design Enhancements (January 2025)
+
+- **Modern UI Redesign**: Complete visual overhaul with glassmorphism design, gradient backgrounds, and beautiful animations
+- **Enhanced User Experience**: Intuitive sidebar layout with action buttons, statistics display, and improved component organization  
+- **Theme Support**: Added light/dark theme toggle with system preference detection
+- **Visual Polish**: Implemented floating animations, slide-in effects, gradient buttons, and micro-interactions
+- **Improved Typography**: Enhanced font hierarchy with gradient text effects and better spacing
+- **Component Redesign**: All components updated with modern design patterns, icons, and visual feedback
 
 # User Preferences
 

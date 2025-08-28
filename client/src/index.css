@@ -3,74 +3,113 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(210, 40%, 96%);
+  /* Beautiful gradient background */
+  --background: linear-gradient(135deg, hsl(240, 100%, 98%) 0%, hsl(200, 100%, 97%) 100%);
+  --background-solid: hsl(240, 100%, 98%);
   --foreground: hsl(222.2, 84%, 4.9%);
-  --card: hsl(0, 0%, 100%);
+  
+  /* Enhanced card design with glassmorphism */
+  --card: hsla(0, 0%, 100%, 0.9);
   --card-foreground: hsl(222.2, 84%, 4.9%);
+  --card-border: hsla(255, 255%, 255%, 0.2);
+  
   --popover: hsl(0, 0%, 100%);
   --popover-foreground: hsl(222.2, 84%, 4.9%);
-  --primary: hsl(221.2, 83.2%, 53.3%);
+  
+  /* Modern gradient primary colors */
+  --primary: linear-gradient(135deg, hsl(262, 83%, 58%) 0%, hsl(221, 83%, 53%) 100%);
+  --primary-solid: hsl(262, 83%, 58%);
   --primary-foreground: hsl(210, 40%, 98%);
-  --secondary: hsl(210, 40%, 96%);
+  
+  /* Subtle secondary colors */
+  --secondary: hsl(210, 40%, 97%);
   --secondary-foreground: hsl(222.2, 84%, 4.9%);
   --muted: hsl(210, 40%, 96%);
   --muted-foreground: hsl(215.4, 16.3%, 46.9%);
-  --accent: hsl(210, 40%, 96%);
-  --accent-foreground: hsl(222.2, 84%, 4.9%);
+  --accent: hsl(262, 83%, 58%);
+  --accent-foreground: hsl(210, 40%, 98%);
+  
+  /* Vibrant status colors */
   --destructive: hsl(0, 84.2%, 60.2%);
   --destructive-foreground: hsl(210, 40%, 98%);
-  --border: hsl(214.3, 31.8%, 91.4%);
-  --input: hsl(214.3, 31.8%, 91.4%);
-  --ring: hsl(221.2, 83.2%, 53.3%);
-  --chart-1: hsl(221.2, 83.2%, 53.3%);
-  --chart-2: hsl(159.7826, 100%, 36.0784%);
-  --chart-3: hsl(42.0290, 92.8251%, 56.2745%);
-  --chart-4: hsl(147.1429, 78.5047%, 41.9608%);
-  --chart-5: hsl(341.4894, 75.2000%, 50.9804%);
-  --sidebar: hsl(210, 40%, 96%);
-  --sidebar-foreground: hsl(222.2, 84%, 4.9%);
-  --sidebar-primary: hsl(221.2, 83.2%, 53.3%);
-  --sidebar-primary-foreground: hsl(210, 40%, 98%);
-  --sidebar-accent: hsl(210, 40%, 96%);
-  --sidebar-accent-foreground: hsl(222.2, 84%, 4.9%);
-  --sidebar-border: hsl(214.3, 31.8%, 91.4%);
-  --sidebar-ring: hsl(221.2, 83.2%, 53.3%);
-  --font-sans: Open Sans, sans-serif;
-  --font-serif: Georgia, serif;
-  --font-mono: Menlo, monospace;
-  --radius: 0.5rem;
-  --shadow-2xs: 0px 2px 0px 0px hsl(221.2 83.2% 53.3% / 0.00);
-  --shadow-xs: 0px 2px 0px 0px hsl(221.2 83.2% 53.3% / 0.00);
-  --shadow-sm: 0px 2px 0px 0px hsl(221.2 83.2% 53.3% / 0.00), 0px 1px 2px -1px hsl(221.2 83.2% 53.3% / 0.00);
-  --shadow: 0px 2px 0px 0px hsl(221.2 83.2% 53.3% / 0.00), 0px 1px 2px -1px hsl(221.2 83.2% 53.3% / 0.00);
-  --shadow-md: 0px 2px 0px 0px hsl(221.2 83.2% 53.3% / 0.00), 0px 2px 4px -1px hsl(221.2 83.2% 53.3% / 0.00);
-  --shadow-lg: 0px 2px 0px 0px hsl(221.2 83.2% 53.3% / 0.00), 0px 4px 6px -1px hsl(221.2 83.2% 53.3% / 0.00);
-  --shadow-xl: 0px 2px 0px 0px hsl(221.2 83.2% 53.3% / 0.00), 0px 8px 10px -1px hsl(221.2 83.2% 53.3% / 0.00);
-  --shadow-2xl: 0px 2px 0px 0px hsl(221.2 83.2% 53.3% / 0.00);
-  --tracking-normal: 0em;
-  --spacing: 0.25rem;
+  --success: hsl(142, 76%, 36%);
+  --success-foreground: hsl(210, 40%, 98%);
+  --warning: hsl(38, 92%, 50%);
+  --warning-foreground: hsl(222.2, 84%, 4.9%);
+  
+  /* Enhanced borders and inputs */
+  --border: hsla(214.3, 31.8%, 91.4%, 0.6);
+  --input: hsla(214.3, 31.8%, 91.4%, 0.8);
+  --ring: hsl(262, 83%, 58%);
+  
+  /* Beautiful color palette */
+  --chart-1: hsl(262, 83%, 58%);
+  --chart-2: hsl(173, 58%, 39%);
+  --chart-3: hsl(42, 93%, 56%);
+  --chart-4: hsl(147, 79%, 42%);
+  --chart-5: hsl(341, 75%, 51%);
+  
+  /* Enhanced typography */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: "Crimson Text", Georgia, serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+  
+  /* Enhanced spacing and shadows */
+  --radius: 0.75rem;
+  --shadow-elegant: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-floating: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-dramatic: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-glow: 0 0 0 1px rgba(139, 92, 246, 0.1), 0 0 20px rgba(139, 92, 246, 0.2);
+  
+  /* Animation variables */
+  --animation-duration: 0.2s;
+  --animation-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dark {
-  --background: hsl(222.2, 84%, 4.9%);
+  /* Dark mode with beautiful gradients */
+  --background: linear-gradient(135deg, hsl(222, 84%, 5%) 0%, hsl(240, 63%, 8%) 100%);
+  --background-solid: hsl(222, 84%, 5%);
   --foreground: hsl(210, 40%, 98%);
-  --card: hsl(222.2, 84%, 4.9%);
+  
+  /* Dark glassmorphism cards */
+  --card: hsla(222, 84%, 8%, 0.9);
   --card-foreground: hsl(210, 40%, 98%);
-  --popover: hsl(222.2, 84%, 4.9%);
+  --card-border: hsla(255, 255%, 255%, 0.1);
+  
+  --popover: hsl(222.2, 84%, 8%);
   --popover-foreground: hsl(210, 40%, 98%);
-  --primary: hsl(217.2, 91.2%, 59.8%);
+  
+  /* Enhanced dark primary colors */
+  --primary: linear-gradient(135deg, hsl(262, 83%, 65%) 0%, hsl(221, 83%, 60%) 100%);
+  --primary-solid: hsl(262, 83%, 65%);
   --primary-foreground: hsl(222.2, 84%, 4.9%);
+  
   --secondary: hsl(217.2, 32.6%, 17.5%);
   --secondary-foreground: hsl(210, 40%, 98%);
   --muted: hsl(217.2, 32.6%, 17.5%);
   --muted-foreground: hsl(215, 20.2%, 65.1%);
-  --accent: hsl(217.2, 32.6%, 17.5%);
-  --accent-foreground: hsl(210, 40%, 98%);
-  --destructive: hsl(0, 62.8%, 30.6%);
+  --accent: hsl(262, 83%, 65%);
+  --accent-foreground: hsl(222.2, 84%, 4.9%);
+  
+  /* Dark mode status colors */
+  --destructive: hsl(0, 62.8%, 50%);
   --destructive-foreground: hsl(210, 40%, 98%);
-  --border: hsl(217.2, 32.6%, 17.5%);
-  --input: hsl(217.2, 32.6%, 17.5%);
-  --ring: hsl(224.3, 76.3%, 94.1%);
+  --success: hsl(142, 76%, 45%);
+  --success-foreground: hsl(210, 40%, 98%);
+  --warning: hsl(38, 92%, 60%);
+  --warning-foreground: hsl(222.2, 84%, 4.9%);
+  
+  /* Enhanced dark borders */
+  --border: hsla(217.2, 32.6%, 17.5%, 0.8);
+  --input: hsla(217.2, 32.6%, 17.5%, 0.9);
+  --ring: hsl(262, 83%, 65%);
+  
+  /* Dark mode shadows with subtle glow */
+  --shadow-elegant: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --shadow-floating: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --shadow-dramatic: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 0 1px rgba(139, 92, 246, 0.2), 0 0 20px rgba(139, 92, 246, 0.3);
 }
 
 @layer base {
@@ -78,46 +117,102 @@
     @apply border-border;
   }
 
-  body {
-    @apply font-sans antialiased bg-background text-foreground;
+  html {
+    scroll-behavior: smooth;
   }
 
-  /* Custom slider styling for better visual appeal */
+  body {
+    @apply font-sans antialiased text-foreground;
+    background: var(--background);
+    min-height: 100vh;
+    background-attachment: fixed;
+  }
+
+  /* Beautiful gradient buttons */
+  .btn-gradient {
+    background: var(--primary);
+    background-size: 200% 200%;
+    animation: gradientShift 3s ease infinite;
+    transition: all var(--animation-duration) var(--animation-ease);
+  }
+
+  .btn-gradient:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-floating);
+  }
+
+  /* Enhanced slider styling */
   input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
-    height: 6px;
-    border-radius: 3px;
-    background: hsl(var(--muted));
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--primary-solid) 0%, hsl(var(--muted)) 0%);
     outline: none;
+    transition: all var(--animation-duration) var(--animation-ease);
   }
 
   input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    height: 18px;
-    width: 18px;
+    height: 20px;
+    width: 20px;
     border-radius: 50%;
-    background: hsl(var(--primary));
+    background: var(--primary-solid);
     cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: var(--shadow-elegant);
+    border: 2px solid white;
+    transition: all var(--animation-duration) var(--animation-ease);
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-glow);
   }
 
   input[type="range"]::-moz-range-thumb {
-    height: 18px;
-    width: 18px;
+    height: 20px;
+    width: 20px;
     border-radius: 50%;
-    background: hsl(var(--primary));
+    background: var(--primary-solid);
     cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: 2px solid white;
+    box-shadow: var(--shadow-elegant);
+    transition: all var(--animation-duration) var(--animation-ease);
+  }
+
+  /* Beautiful glassmorphism cards */
+  .glass-card {
+    background: var(--card);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--shadow-floating);
+    transition: all var(--animation-duration) var(--animation-ease);
+  }
+
+  .glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-dramatic);
+  }
+
+  /* Enhanced input styling */
+  .enhanced-input {
+    background: var(--card);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    transition: all var(--animation-duration) var(--animation-ease);
+  }
+
+  .enhanced-input:focus {
+    border-color: var(--primary-solid);
+    box-shadow: var(--shadow-glow);
   }
 }
 
-/* Loading animation */
+/* Beautiful animations */
 .loading-spinner {
   border: 3px solid hsl(var(--muted));
-  border-top: 3px solid hsl(var(--primary));
+  border-top: 3px solid var(--primary-solid);
   border-radius: 50%;
   width: 20px;
   height: 20px;
@@ -129,23 +224,113 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Error state animation */
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Enhanced error animation */
 .error-shake {
-  animation: shake 0.5s ease-in-out;
+  animation: shake 0.6s ease-in-out;
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+  0%, 100% { transform: translateX(0) scale(1); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-3px) scale(1.02); }
+  20%, 40%, 60%, 80% { transform: translateX(3px) scale(1.02); }
 }
 
-/* Success state animation */
+/* Beautiful success animation */
 .success-fade {
-  animation: fadeIn 0.5s ease-in-out;
+  animation: successPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-@keyframes fadeIn {
-  0% { opacity: 0; transform: translateY(10px); }
-  100% { opacity: 1; transform: translateY(0); }
+@keyframes successPop {
+  0% { 
+    opacity: 0; 
+    transform: translateY(20px) scale(0.9); 
+  }
+  50% {
+    transform: translateY(-5px) scale(1.05);
+  }
+  100% { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+  }
+}
+
+/* Floating animation for cards */
+.float-animation {
+  animation: floating 3s ease-in-out infinite;
+}
+
+@keyframes floating {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-3px); }
+}
+
+/* Pulse animation for important elements */
+.pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { 
+    box-shadow: var(--shadow-elegant);
+  }
+  50% { 
+    box-shadow: var(--shadow-glow);
+  }
+}
+
+/* Slide up animation for content */
+.slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scale in animation for buttons */
+.scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+@keyframes scaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--muted);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-solid);
+  border-radius: 4px;
+  transition: background var(--animation-duration) var(--animation-ease);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
 }
