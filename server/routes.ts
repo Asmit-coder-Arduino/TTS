@@ -12,10 +12,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = generateSpeechRequestSchema.parse(req.body);
       const { paragraphs, apiKey } = validatedData;
 
-      if (!apiKey || !apiKey.startsWith('sk-')) {
+      if (!apiKey || !apiKey.startsWith('sk_')) {
         return res.status(400).json({ 
           success: false, 
-          error: "Invalid API key format. ElevenLabs API key should start with 'sk-'" 
+          error: "Invalid API key format. ElevenLabs API key should start with 'sk_'" 
         });
       }
 
@@ -167,10 +167,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { apiKey } = req.body;
 
-      if (!apiKey || !apiKey.startsWith('sk-')) {
+      if (!apiKey || !apiKey.startsWith('sk_')) {
         return res.status(400).json({ 
           success: false, 
-          error: "Invalid API key format" 
+          error: "Invalid API key format. ElevenLabs API key should start with 'sk_'" 
         });
       }
 
