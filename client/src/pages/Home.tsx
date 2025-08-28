@@ -5,9 +5,11 @@ import { Volume2, Settings, Plus, Download, CheckCircle, AlertCircle, Loader2 } 
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Paragraph, VoiceSettings, AudioState } from "../types";
+import { Paragraph, VoiceSettings, AudioState, WordUsageStats } from "../types";
 import { ParagraphEditor } from "../components/ParagraphEditor";
 import { SettingsModal } from "../components/SettingsModal";
+import { WordUsageDisplay } from "../components/WordUsageDisplay";
+import { countTotalWords } from "../lib/wordCounter";
 
 const defaultVoiceSettings: VoiceSettings = {
   stability: 0.5,
@@ -39,6 +41,8 @@ export default function Home() {
     return localStorage.getItem('elevenlabs_api_key') || '';
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [wordUsage, setWordUsage] = useState<WordUsageStats | null>(null);
+  const [isLoadingUsage, setIsLoadingUsage] = useState(false);
   const { toast } = useToast();
 
   // Save API key to localStorage
@@ -46,6 +50,33 @@ export default function Home() {
     if (apiKey) {
       localStorage.setItem('elevenlabs_api_key', apiKey);
     }
+  }, [apiKey]);
+
+  // Fetch word usage when API key changes
+  useEffect(() => {
+    const fetchWordUsage = async () => {
+      if (!apiKey || !apiKey.startsWith('sk_')) return;
+      
+      setIsLoadingUsage(true);
+      try {
+        const response = await apiRequest('POST', '/api/word-usage', { apiKey });
+        const data = await response.json();
+        if (data.success) {
+          setWordUsage({
+            wordsUsed: data.wordsUsed,
+            monthlyLimit: data.monthlyLimit,
+            wordsRemaining: data.wordsRemaining,
+            currentMonth: data.currentMonth
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch word usage:', error);
+      } finally {
+        setIsLoadingUsage(false);
+      }
+    };
+
+    fetchWordUsage();
   }, [apiKey]);
 
   const generateSpeechMutation = useMutation({
@@ -64,11 +95,25 @@ export default function Home() {
         setAudioState({
           isGenerating: false,
           audioUrl: data.audioUrl,
-          error: null
+          error: null,
+          wordsUsed: data.wordsUsed,
+          totalWordsUsed: data.totalWordsUsed,
+          wordsRemaining: data.wordsRemaining,
+          monthlyLimit: data.monthlyLimit
         });
+        
+        // Update word usage state
+        if (wordUsage) {
+          setWordUsage({
+            ...wordUsage,
+            wordsUsed: data.totalWordsUsed,
+            wordsRemaining: data.wordsRemaining
+          });
+        }
+        
         toast({
           title: "Success",
-          description: "Speech generated successfully!",
+          description: `Speech generated successfully! Used ${data.wordsUsed} words.`,
         });
       } else {
         setAudioState(prev => ({
@@ -119,6 +164,16 @@ export default function Home() {
       return;
     }
 
+    // Check word count against remaining limit
+    const totalWords = countTotalWords(validParagraphs);
+    if (wordUsage && totalWords > wordUsage.wordsRemaining) {
+      setAudioState(prev => ({
+        ...prev,
+        error: `Word limit exceeded. You need ${totalWords} words but only have ${wordUsage.wordsRemaining} remaining this month.`
+      }));
+      return;
+    }
+
     generateSpeechMutation.mutate({ paragraphs: validParagraphs, apiKey });
   };
 
@@ -161,6 +216,14 @@ export default function Home() {
             Settings
           </Button>
         </div>
+
+        {/* Word Usage Display */}
+        {wordUsage && !isLoadingUsage && (
+          <WordUsageDisplay 
+            usage={wordUsage} 
+            currentWords={countTotalWords(paragraphs.filter(p => p.text.trim()))}
+          />
+        )}
 
         {/* Main Content */}
         <div className="space-y-6">

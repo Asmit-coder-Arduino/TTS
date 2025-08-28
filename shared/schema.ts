@@ -9,6 +9,15 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
 });
 
+export const apiKeyUsage = pgTable("api_key_usage", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  apiKeyHash: text("api_key_hash").notNull().unique(),
+  wordsUsed: integer("words_used").notNull().default(0),
+  monthlyLimit: integer("monthly_limit").notNull().default(10000),
+  currentMonth: text("current_month").notNull(),
+  lastUpdated: text("last_updated").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
 export const voiceSettingsSchema = z.object({
   stability: z.number().min(0).max(1).default(0.5),
   similarity_boost: z.number().min(0).max(1).default(0.5),
@@ -31,6 +40,10 @@ export const generateSpeechRequestSchema = z.object({
   apiKey: z.string().min(1, "API key is required")
 });
 
+export const wordCountSchema = z.object({
+  apiKey: z.string().min(1, "API key is required")
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -41,6 +54,9 @@ export type User = typeof users.$inferSelect;
 export type VoiceSettings = z.infer<typeof voiceSettingsSchema>;
 export type Paragraph = z.infer<typeof paragraphSchema>;
 export type GenerateSpeechRequest = z.infer<typeof generateSpeechRequestSchema>;
+export type WordCountRequest = z.infer<typeof wordCountSchema>;
+export type ApiKeyUsage = typeof apiKeyUsage.$inferSelect;
+export type InsertApiKeyUsage = typeof apiKeyUsage.$inferInsert;
 
 export interface Voice {
   id: string;
@@ -53,4 +69,22 @@ export interface AudioResponse {
   success: boolean;
   audioUrl?: string;
   error?: string;
+}
+
+export interface WordCountResponse {
+  success: boolean;
+  wordsUsed: number;
+  monthlyLimit: number;
+  wordsRemaining: number;
+  currentMonth: string;
+  error?: string;
+}
+
+export interface UsageValidationResult {
+  canProceed: boolean;
+  wordsUsed: number;
+  monthlyLimit: number;
+  wordsRemaining: number;
+  requestedWords: number;
+  message: string;
 }

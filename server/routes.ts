@@ -1,10 +1,43 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateSpeechRequestSchema } from "@shared/schema";
+import { generateSpeechRequestSchema, wordCountSchema, type WordCountResponse, type UsageValidationResult } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { countTotalWords, hashApiKey, getCurrentMonth } from "./utils/wordCounter";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // Helper function to validate word usage
+  async function validateWordUsage(apiKey: string, requestedWords: number): Promise<UsageValidationResult> {
+    const apiKeyHash = hashApiKey(apiKey);
+    const currentMonth = getCurrentMonth();
+    
+    let usage = await storage.getApiKeyUsage(apiKeyHash);
+    
+    if (!usage || usage.currentMonth !== currentMonth) {
+      // Create new usage record for current month
+      usage = await storage.createOrUpdateApiKeyUsage({
+        apiKeyHash,
+        wordsUsed: 0,
+        monthlyLimit: 10000,
+        currentMonth
+      });
+    }
+    
+    const wordsRemaining = usage.monthlyLimit - usage.wordsUsed;
+    const canProceed = requestedWords <= wordsRemaining;
+    
+    return {
+      canProceed,
+      wordsUsed: usage.wordsUsed,
+      monthlyLimit: usage.monthlyLimit,
+      wordsRemaining,
+      requestedWords,
+      message: canProceed 
+        ? `You have ${wordsRemaining} words remaining this month.`
+        : `Insufficient words remaining. You need ${requestedWords} words but only have ${wordsRemaining} remaining.`
+    };
+  }
   
   // Generate speech endpoint
   app.post("/api/generate-speech", async (req, res) => {
@@ -16,6 +49,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ 
           success: false, 
           error: "Invalid API key format. ElevenLabs API key should start with 'sk_'" 
+        });
+      }
+
+      // Count total words in all paragraphs
+      const totalWords = countTotalWords(paragraphs);
+      
+      // Validate word usage before making API call
+      const usageValidation = await validateWordUsage(apiKey, totalWords);
+      
+      if (!usageValidation.canProceed) {
+        return res.status(400).json({
+          success: false,
+          error: usageValidation.message,
+          wordsUsed: usageValidation.wordsUsed,
+          monthlyLimit: usageValidation.monthlyLimit,
+          wordsRemaining: usageValidation.wordsRemaining,
+          requestedWords: usageValidation.requestedWords
         });
       }
 
@@ -103,10 +153,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const filename = `speech_${randomUUID()}.mp3`;
       await storage.storeAudioFile(filename, audioBuffer);
 
+      // Update word usage after successful generation
+      const apiKeyHash = hashApiKey(apiKey);
+      await storage.updateWordsUsed(apiKeyHash, totalWords);
+      
+      // Get updated usage stats
+      const updatedUsage = await storage.getApiKeyUsage(apiKeyHash);
+      const wordsRemaining = updatedUsage ? updatedUsage.monthlyLimit - updatedUsage.wordsUsed : 0;
+
       res.json({ 
         success: true, 
         audioUrl: `/api/audio/${filename}`,
-        message: "Speech generated successfully" 
+        message: "Speech generated successfully",
+        wordsUsed: totalWords,
+        totalWordsUsed: updatedUsage?.wordsUsed || 0,
+        wordsRemaining,
+        monthlyLimit: updatedUsage?.monthlyLimit || 10000
       });
 
     } catch (error) {
@@ -159,6 +221,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Audio serve error:', error);
       res.status(500).json({ error: "Failed to serve audio file" });
+    }
+  });
+
+  // Get word usage statistics
+  app.post("/api/word-usage", async (req, res) => {
+    try {
+      const validatedData = wordCountSchema.parse(req.body);
+      const { apiKey } = validatedData;
+
+      if (!apiKey || !apiKey.startsWith('sk_')) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid API key format. ElevenLabs API key should start with 'sk_'" 
+        });
+      }
+
+      const apiKeyHash = hashApiKey(apiKey);
+      const currentMonth = getCurrentMonth();
+      
+      let usage = await storage.getApiKeyUsage(apiKeyHash);
+      
+      if (!usage || usage.currentMonth !== currentMonth) {
+        // Create new usage record for current month
+        usage = await storage.createOrUpdateApiKeyUsage({
+          apiKeyHash,
+          wordsUsed: 0,
+          monthlyLimit: 10000,
+          currentMonth
+        });
+      }
+
+      const response: WordCountResponse = {
+        success: true,
+        wordsUsed: usage.wordsUsed,
+        monthlyLimit: usage.monthlyLimit,
+        wordsRemaining: usage.monthlyLimit - usage.wordsUsed,
+        currentMonth: usage.currentMonth
+      };
+
+      res.json(response);
+
+    } catch (error) {
+      console.error('Word usage error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to get word usage statistics" 
+      });
     }
   });
 
