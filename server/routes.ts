@@ -119,7 +119,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let errorMessage = "Failed to generate speech";
         
         if (response.status === 401) {
-          errorMessage = "Invalid API key. Please check your ElevenLabs API key.";
+          try {
+            const errorJson = JSON.parse(errorText);
+            if (errorJson.detail?.status === "detected_unusual_activity") {
+              errorMessage = "ElevenLabs has temporarily restricted your free tier usage due to unusual activity detection. This may happen if you're using a VPN/proxy or have multiple accounts. Please upgrade to a paid plan or contact ElevenLabs support.";
+            } else {
+              errorMessage = "Invalid API key. Please check your ElevenLabs API key.";
+            }
+          } catch {
+            errorMessage = "Invalid API key. Please check your ElevenLabs API key.";
+          }
         } else if (response.status === 422) {
           errorMessage = "Invalid voice ID or request parameters.";
         } else if (response.status === 429) {
