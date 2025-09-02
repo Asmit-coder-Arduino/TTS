@@ -25,7 +25,6 @@ const createDefaultParagraph = (id: string): Paragraph => ({
   text: "",
   voiceId: "21m00Tcm4TlvDq8ikWAM", // Rachel (female)
   language: 'en',
-  age: 30,
   settings: { ...defaultVoiceSettings }
 });
 

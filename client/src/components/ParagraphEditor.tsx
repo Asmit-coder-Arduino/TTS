@@ -3,7 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Trash2, Type, User, Globe, Hash } from "lucide-react";
+import { Trash2, Type, User, Globe } from "lucide-react";
 import { Paragraph } from "../types";
 import { getVoicesByLanguage } from "../lib/voices";
 import { VoiceControls } from "./VoiceControls";
@@ -68,7 +68,7 @@ export function ParagraphEditor({ paragraph, index, onUpdate, onDelete, showDele
       </div>
 
       {/* Voice Configuration */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="space-y-3">
           <Label className="block text-sm font-semibold text-muted-foreground flex items-center gap-2">
             <Globe className="w-4 h-4" />
@@ -122,23 +122,6 @@ export function ParagraphEditor({ paragraph, index, onUpdate, onDelete, showDele
               ))}
             </SelectContent>
           </Select>
-        </div>
-
-        <div className="space-y-3">
-          <Label className="block text-sm font-semibold text-muted-foreground flex items-center gap-2">
-            <Hash className="w-4 h-4" />
-            Voice Age
-          </Label>
-          <Input
-            type="number"
-            min={10}
-            max={100}
-            value={paragraph.age}
-            onChange={(e) => updateParagraph({ age: parseInt(e.target.value) || 30 })}
-            className="enhanced-input border-purple-200 hover:border-purple-300 transition-all duration-300"
-            placeholder="Age (10-100)"
-            data-testid={`input-age-${paragraph.id}`}
-          />
         </div>
       </div>
 

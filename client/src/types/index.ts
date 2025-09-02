@@ -11,7 +11,6 @@ export interface Paragraph {
   text: string;
   voiceId: string;
   language: 'en' | 'hi';
-  age: number;
   settings: VoiceSettings;
 }
 
