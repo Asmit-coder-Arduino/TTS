@@ -44,7 +44,10 @@ export function SettingsModal({ isOpen, onClose, apiKey, onApiKeyChange }: Setti
     }
   });
 
-  const handleSave = () => {
+  const handleSave = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    
     if (tempApiKey.trim()) {
       onApiKeyChange(tempApiKey.trim());
       
@@ -61,6 +64,24 @@ export function SettingsModal({ isOpen, onClose, apiKey, onApiKeyChange }: Setti
       setConnectionStatus('error');
       setErrorMessage('Please enter a valid API key');
     }
+  };
+
+  const handleCancel = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    // Reset state when closing
+    setConnectionStatus('idle');
+    setErrorMessage('');
+    setTempApiKey(apiKey); // Reset to original API key
+    onClose();
+  };
+
+  const handleClose = () => {
+    // Reset state when closing via X button or backdrop
+    setConnectionStatus('idle');
+    setErrorMessage('');
+    setTempApiKey(apiKey); // Reset to original API key
+    onClose();
   };
 
   const handleTestConnection = () => {
@@ -101,7 +122,7 @@ export function SettingsModal({ isOpen, onClose, apiKey, onApiKeyChange }: Setti
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="max-w-lg glass-card border-2" data-testid="modal-settings">
         <DialogHeader className="text-center pb-6">
           <div className="flex justify-center mb-4">
@@ -170,7 +191,7 @@ export function SettingsModal({ isOpen, onClose, apiKey, onApiKeyChange }: Setti
             </Button>
             <Button
               variant="outline"
-              onClick={onClose}
+              onClick={handleCancel}
               className="glass-card border-gray-200 hover:border-gray-300"
               data-testid="button-cancel"
             >
