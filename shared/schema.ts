@@ -12,7 +12,7 @@ export const users = pgTable("users", {
 export const apiKeyUsage = pgTable("api_key_usage", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   apiKeyHash: text("api_key_hash").notNull().unique(),
-  wordsUsed: integer("words_used").notNull().default(0),
+  charactersUsed: integer("characters_used").notNull().default(0),
   monthlyLimit: integer("monthly_limit").notNull().default(10000),
   currentMonth: text("current_month").notNull(),
   lastUpdated: text("last_updated").notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -40,7 +40,7 @@ export const generateSpeechRequestSchema = z.object({
   apiKey: z.string().min(1, "API key is required")
 });
 
-export const wordCountSchema = z.object({
+export const characterCountSchema = z.object({
   apiKey: z.string().min(1, "API key is required")
 });
 
@@ -54,7 +54,7 @@ export type User = typeof users.$inferSelect;
 export type VoiceSettings = z.infer<typeof voiceSettingsSchema>;
 export type Paragraph = z.infer<typeof paragraphSchema>;
 export type GenerateSpeechRequest = z.infer<typeof generateSpeechRequestSchema>;
-export type WordCountRequest = z.infer<typeof wordCountSchema>;
+export type CharacterCountRequest = z.infer<typeof characterCountSchema>;
 export type ApiKeyUsage = typeof apiKeyUsage.$inferSelect;
 export type InsertApiKeyUsage = typeof apiKeyUsage.$inferInsert;
 
@@ -71,20 +71,20 @@ export interface AudioResponse {
   error?: string;
 }
 
-export interface WordCountResponse {
+export interface CharacterCountResponse {
   success: boolean;
-  wordsUsed: number;
+  charactersUsed: number;
   monthlyLimit: number;
-  wordsRemaining: number;
+  charactersRemaining: number;
   currentMonth: string;
   error?: string;
 }
 
 export interface UsageValidationResult {
   canProceed: boolean;
-  wordsUsed: number;
+  charactersUsed: number;
   monthlyLimit: number;
-  wordsRemaining: number;
-  requestedWords: number;
+  charactersRemaining: number;
+  requestedCharacters: number;
   message: string;
 }

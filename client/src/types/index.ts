@@ -25,9 +25,9 @@ export interface AudioState {
   isGenerating: boolean;
   audioUrl: string | null;
   error: string | null;
-  wordsUsed?: number;
-  totalWordsUsed?: number;
-  wordsRemaining?: number;
+  charactersUsed?: number;
+  totalCharactersUsed?: number;
+  charactersRemaining?: number;
   monthlyLimit?: number;
 }
 
@@ -35,18 +35,18 @@ export interface Settings {
   apiKey: string;
 }
 
-export interface WordUsageStats {
-  wordsUsed: number;
+export interface CharacterUsageStats {
+  charactersUsed: number;
   monthlyLimit: number;
-  wordsRemaining: number;
+  charactersRemaining: number;
   currentMonth: string;
 }
 
-export interface WordUsageResponse {
+export interface CharacterUsageResponse {
   success: boolean;
-  wordsUsed: number;
+  charactersUsed: number;
   monthlyLimit: number;
-  wordsRemaining: number;
+  charactersRemaining: number;
   currentMonth: string;
   error?: string;
 }

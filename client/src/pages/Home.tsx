@@ -5,12 +5,12 @@ import { Volume2, Settings, Plus, Download, CheckCircle, AlertCircle, Loader2, S
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Paragraph, VoiceSettings, AudioState, WordUsageStats } from "../types";
+import { Paragraph, VoiceSettings, AudioState, CharacterUsageStats } from "../types";
 import { ParagraphEditor } from "../components/ParagraphEditor";
 import { SettingsModal } from "../components/SettingsModal";
-import { WordUsageDisplay } from "../components/WordUsageDisplay";
+import { CharacterUsageDisplay } from "../components/WordUsageDisplay";
 import { ThemeToggle } from "../components/ThemeToggle";
-import { countTotalWords } from "../lib/wordCounter";
+import { countTotalCharacters } from "../lib/wordCounter";
 
 const defaultVoiceSettings: VoiceSettings = {
   stability: 0.5,
@@ -41,7 +41,7 @@ export default function Home() {
     return localStorage.getItem('elevenlabs_api_key') || '';
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [wordUsage, setWordUsage] = useState<WordUsageStats | null>(null);
+  const [characterUsage, setCharacterUsage] = useState<CharacterUsageStats | null>(null);
   const [isLoadingUsage, setIsLoadingUsage] = useState(false);
   const { toast } = useToast();
 
@@ -52,31 +52,31 @@ export default function Home() {
     }
   }, [apiKey]);
 
-  // Fetch word usage when API key changes
+  // Fetch character usage when API key changes
   useEffect(() => {
-    const fetchWordUsage = async () => {
+    const fetchCharacterUsage = async () => {
       if (!apiKey || !apiKey.startsWith('sk_')) return;
       
       setIsLoadingUsage(true);
       try {
-        const response = await apiRequest('POST', '/api/word-usage', { apiKey });
+        const response = await apiRequest('POST', '/api/character-usage', { apiKey });
         const data = await response.json();
         if (data.success) {
-          setWordUsage({
-            wordsUsed: data.wordsUsed,
+          setCharacterUsage({
+            charactersUsed: data.charactersUsed,
             monthlyLimit: data.monthlyLimit,
-            wordsRemaining: data.wordsRemaining,
+            charactersRemaining: data.charactersRemaining,
             currentMonth: data.currentMonth
           });
         }
       } catch (error) {
-        console.error('Failed to fetch word usage:', error);
+        console.error('Failed to fetch character usage:', error);
       } finally {
         setIsLoadingUsage(false);
       }
     };
 
-    fetchWordUsage();
+    fetchCharacterUsage();
   }, [apiKey]);
 
   const generateSpeechMutation = useMutation({
@@ -96,24 +96,24 @@ export default function Home() {
           isGenerating: false,
           audioUrl: data.audioUrl,
           error: null,
-          wordsUsed: data.wordsUsed,
-          totalWordsUsed: data.totalWordsUsed,
-          wordsRemaining: data.wordsRemaining,
+          charactersUsed: data.charactersUsed,
+          totalCharactersUsed: data.totalCharactersUsed,
+          charactersRemaining: data.charactersRemaining,
           monthlyLimit: data.monthlyLimit
         });
         
-        // Update word usage state
-        if (wordUsage) {
-          setWordUsage({
-            ...wordUsage,
-            wordsUsed: data.totalWordsUsed,
-            wordsRemaining: data.wordsRemaining
+        // Update character usage state
+        if (characterUsage) {
+          setCharacterUsage({
+            ...characterUsage,
+            charactersUsed: data.totalCharactersUsed,
+            charactersRemaining: data.charactersRemaining
           });
         }
         
         toast({
           title: "Success",
-          description: `Speech generated successfully! Used ${data.wordsUsed} words.`,
+          description: `Speech generated successfully! Used ${data.charactersUsed} characters.`,
         });
       } else {
         setAudioState(prev => ({
@@ -164,12 +164,12 @@ export default function Home() {
       return;
     }
 
-    // Check word count against remaining limit
-    const totalWords = countTotalWords(validParagraphs);
-    if (wordUsage && totalWords > wordUsage.wordsRemaining) {
+    // Check character count against remaining limit
+    const totalCharacters = countTotalCharacters(validParagraphs);
+    if (characterUsage && totalCharacters > characterUsage.charactersRemaining) {
       setAudioState(prev => ({
         ...prev,
-        error: `Word limit exceeded. You need ${totalWords} words but only have ${wordUsage.wordsRemaining} remaining this month.`
+        error: `Character limit exceeded. You need ${totalCharacters} characters but only have ${characterUsage.charactersRemaining} remaining this month.`
       }));
       return;
     }
@@ -232,11 +232,11 @@ export default function Home() {
         </div>
 
         {/* Word Usage Display */}
-        {wordUsage && !isLoadingUsage && (
+        {characterUsage && !isLoadingUsage && (
           <div className="slide-up">
-            <WordUsageDisplay 
-              usage={wordUsage} 
-              currentWords={countTotalWords(paragraphs.filter(p => p.text.trim()))}
+            <CharacterUsageDisplay 
+              usage={characterUsage} 
+              currentCharacters={countTotalCharacters(paragraphs.filter(p => p.text.trim()))}
             />
           </div>
         )}
@@ -366,16 +366,16 @@ export default function Home() {
                   <span className="font-semibold text-lg">{paragraphs.length}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Current Words</span>
+                  <span className="text-sm text-muted-foreground">Current Characters</span>
                   <span className="font-semibold text-lg">
-                    {countTotalWords(paragraphs.filter(p => p.text.trim()))}
+                    {countTotalCharacters(paragraphs.filter(p => p.text.trim()))}
                   </span>
                 </div>
-                {wordUsage && (
+                {characterUsage && (
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Remaining</span>
                     <span className="font-semibold text-lg text-green-600">
-                      {wordUsage.wordsRemaining.toLocaleString()}
+                      {characterUsage.charactersRemaining.toLocaleString()}
                     </span>
                   </div>
                 )}

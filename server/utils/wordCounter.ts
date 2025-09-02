@@ -1,9 +1,8 @@
 import crypto from 'crypto';
 
-export function countWords(text: string): number {
-  // Remove extra whitespace and split by word boundaries
-  const words = text.trim().split(/\s+/).filter(word => word.length > 0);
-  return words.length;
+export function countCharacters(text: string): number {
+  // Count total characters (including spaces and punctuation)
+  return text.length;
 }
 
 export function hashApiKey(apiKey: string): string {
@@ -15,8 +14,8 @@ export function getCurrentMonth(): string {
   return new Date().toISOString().slice(0, 7); // YYYY-MM format
 }
 
-export function countTotalWords(paragraphs: Array<{ text: string }>): number {
+export function countTotalCharacters(paragraphs: Array<{ text: string }>): number {
   return paragraphs.reduce((total, paragraph) => {
-    return total + countWords(paragraph.text);
+    return total + countCharacters(paragraph.text);
   }, 0);
 }

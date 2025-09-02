@@ -1,22 +1,21 @@
 import { Paragraph } from "../types";
 
-export function countWords(text: string): number {
-  // Remove extra whitespace and split by word boundaries
-  const words = text.trim().split(/\s+/).filter(word => word.length > 0);
-  return words.length;
+export function countCharacters(text: string): number {
+  // Count total characters (including spaces and punctuation)
+  return text.length;
 }
 
-export function countTotalWords(paragraphs: Paragraph[]): number {
+export function countTotalCharacters(paragraphs: Paragraph[]): number {
   return paragraphs.reduce((total, paragraph) => {
-    return total + countWords(paragraph.text);
+    return total + countCharacters(paragraph.text);
   }, 0);
 }
 
-export function formatWordCount(count: number): string {
+export function formatCharacterCount(count: number): string {
   if (count === 1) {
-    return "1 word";
+    return "1 character";
   }
-  return `${count.toLocaleString()} words`;
+  return `${count.toLocaleString()} characters`;
 }
 
 export function getUsagePercentage(used: number, limit: number): number {

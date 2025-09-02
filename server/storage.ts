@@ -9,7 +9,7 @@ export interface IStorage {
   getAudioFile(filename: string): Promise<Buffer | undefined>;
   getApiKeyUsage(apiKeyHash: string): Promise<ApiKeyUsage | undefined>;
   createOrUpdateApiKeyUsage(usage: InsertApiKeyUsage): Promise<ApiKeyUsage>;
-  updateWordsUsed(apiKeyHash: string, wordsUsed: number): Promise<void>;
+  updateCharactersUsed(apiKeyHash: string, charactersUsed: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -61,7 +61,7 @@ export class MemStorage implements IStorage {
       // Update existing usage for current month
       const updated: ApiKeyUsage = {
         ...existing,
-        wordsUsed: usage.wordsUsed || existing.wordsUsed,
+        charactersUsed: usage.charactersUsed || existing.charactersUsed,
         lastUpdated: new Date().toISOString()
       };
       this.apiKeyUsage.set(usage.apiKeyHash, updated);
@@ -71,7 +71,7 @@ export class MemStorage implements IStorage {
       const newUsage: ApiKeyUsage = {
         id: randomUUID(),
         apiKeyHash: usage.apiKeyHash,
-        wordsUsed: usage.wordsUsed || 0,
+        charactersUsed: usage.charactersUsed || 0,
         monthlyLimit: usage.monthlyLimit || 10000,
         currentMonth,
         lastUpdated: new Date().toISOString()
@@ -81,12 +81,12 @@ export class MemStorage implements IStorage {
     }
   }
 
-  async updateWordsUsed(apiKeyHash: string, wordsUsed: number): Promise<void> {
+  async updateCharactersUsed(apiKeyHash: string, charactersUsed: number): Promise<void> {
     const existing = this.apiKeyUsage.get(apiKeyHash);
     if (existing) {
       const updated = {
         ...existing,
-        wordsUsed: existing.wordsUsed + wordsUsed,
+        charactersUsed: existing.charactersUsed + charactersUsed,
         lastUpdated: new Date().toISOString()
       };
       this.apiKeyUsage.set(apiKeyHash, updated);

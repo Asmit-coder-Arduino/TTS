@@ -1,9 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateSpeechRequestSchema, wordCountSchema, type WordCountResponse, type UsageValidationResult } from "@shared/schema";
+import { generateSpeechRequestSchema, characterCountSchema, type CharacterCountResponse, type UsageValidationResult } from "@shared/schema";
 import { randomUUID } from "crypto";
-import { countTotalWords, hashApiKey, getCurrentMonth } from "./utils/wordCounter";
+import { countTotalCharacters, hashApiKey, getCurrentMonth } from "./utils/wordCounter";
 import ffmpeg from "fluent-ffmpeg";
 import { promisify } from "util";
 import { writeFile, unlink, mkdir, readFile, rmdir } from "fs/promises";
@@ -12,8 +12,8 @@ import { tmpdir } from "os";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
-  // Helper function to validate word usage
-  async function validateWordUsage(apiKey: string, requestedWords: number): Promise<UsageValidationResult> {
+  // Helper function to validate character usage
+  async function validateCharacterUsage(apiKey: string, requestedCharacters: number): Promise<UsageValidationResult> {
     const apiKeyHash = hashApiKey(apiKey);
     const currentMonth = getCurrentMonth();
     
@@ -23,24 +23,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create new usage record for current month
       usage = await storage.createOrUpdateApiKeyUsage({
         apiKeyHash,
-        wordsUsed: 0,
+        charactersUsed: 0,
         monthlyLimit: 10000,
         currentMonth
       });
     }
     
-    const wordsRemaining = usage.monthlyLimit - usage.wordsUsed;
-    const canProceed = requestedWords <= wordsRemaining;
+    const charactersRemaining = usage.monthlyLimit - usage.charactersUsed;
+    const canProceed = requestedCharacters <= charactersRemaining;
     
     return {
       canProceed,
-      wordsUsed: usage.wordsUsed,
+      charactersUsed: usage.charactersUsed,
       monthlyLimit: usage.monthlyLimit,
-      wordsRemaining,
-      requestedWords,
+      charactersRemaining,
+      requestedCharacters,
       message: canProceed 
-        ? `You have ${wordsRemaining} words remaining this month.`
-        : `Insufficient words remaining. You need ${requestedWords} words but only have ${wordsRemaining} remaining.`
+        ? `You have ${charactersRemaining} characters remaining this month.`
+        : `Insufficient characters remaining. You need ${requestedCharacters} characters but only have ${charactersRemaining} remaining.`
     };
   }
   
@@ -160,20 +160,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Count total words in all paragraphs
-      const totalWords = countTotalWords(paragraphs);
+      // Count total characters in all paragraphs
+      const totalCharacters = countTotalCharacters(paragraphs);
       
-      // Validate word usage before making API call
-      const usageValidation = await validateWordUsage(apiKey, totalWords);
+      // Validate character usage before making API call
+      const usageValidation = await validateCharacterUsage(apiKey, totalCharacters);
       
       if (!usageValidation.canProceed) {
         return res.status(400).json({
           success: false,
           error: usageValidation.message,
-          wordsUsed: usageValidation.wordsUsed,
+          charactersUsed: usageValidation.charactersUsed,
           monthlyLimit: usageValidation.monthlyLimit,
-          wordsRemaining: usageValidation.wordsRemaining,
-          requestedWords: usageValidation.requestedWords
+          charactersRemaining: usageValidation.charactersRemaining,
+          requestedCharacters: usageValidation.requestedCharacters
         });
       }
 
@@ -236,21 +236,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const filename = `speech_${randomUUID()}.mp3`;
       await storage.storeAudioFile(filename, finalAudioBuffer);
 
-      // Update word usage after successful generation
+      // Update character usage after successful generation
       const apiKeyHash = hashApiKey(apiKey);
-      await storage.updateWordsUsed(apiKeyHash, totalWords);
+      await storage.updateCharactersUsed(apiKeyHash, totalCharacters);
       
       // Get updated usage stats
       const updatedUsage = await storage.getApiKeyUsage(apiKeyHash);
-      const wordsRemaining = updatedUsage ? updatedUsage.monthlyLimit - updatedUsage.wordsUsed : 0;
+      const charactersRemaining = updatedUsage ? updatedUsage.monthlyLimit - updatedUsage.charactersUsed : 0;
 
       res.json({ 
         success: true, 
         audioUrl: `/api/audio/${filename}`,
         message: "Speech generated successfully",
-        wordsUsed: totalWords,
-        totalWordsUsed: updatedUsage?.wordsUsed || 0,
-        wordsRemaining,
+        charactersUsed: totalCharacters,
+        totalCharactersUsed: updatedUsage?.charactersUsed || 0,
+        charactersRemaining,
         monthlyLimit: updatedUsage?.monthlyLimit || 10000
       });
 
@@ -332,10 +332,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get word usage statistics
-  app.post("/api/word-usage", async (req, res) => {
+  // Get character usage statistics
+  app.post("/api/character-usage", async (req, res) => {
     try {
-      const validatedData = wordCountSchema.parse(req.body);
+      const validatedData = characterCountSchema.parse(req.body);
       const { apiKey } = validatedData;
 
       if (!apiKey || !apiKey.startsWith('sk_')) {
@@ -354,27 +354,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create new usage record for current month
         usage = await storage.createOrUpdateApiKeyUsage({
           apiKeyHash,
-          wordsUsed: 0,
+          charactersUsed: 0,
           monthlyLimit: 10000,
           currentMonth
         });
       }
 
-      const response: WordCountResponse = {
+      const response: CharacterCountResponse = {
         success: true,
-        wordsUsed: usage.wordsUsed,
+        charactersUsed: usage.charactersUsed,
         monthlyLimit: usage.monthlyLimit,
-        wordsRemaining: usage.monthlyLimit - usage.wordsUsed,
+        charactersRemaining: usage.monthlyLimit - usage.charactersUsed,
         currentMonth: usage.currentMonth
       };
 
       res.json(response);
 
     } catch (error) {
-      console.error('Word usage error:', error);
+      console.error('Character usage error:', error);
       res.status(500).json({ 
         success: false, 
-        error: "Failed to get word usage statistics" 
+        error: "Failed to get character usage statistics" 
       });
     }
   });
