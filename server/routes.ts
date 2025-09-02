@@ -4,6 +4,11 @@ import { storage } from "./storage";
 import { generateSpeechRequestSchema, wordCountSchema, type WordCountResponse, type UsageValidationResult } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { countTotalWords, hashApiKey, getCurrentMonth } from "./utils/wordCounter";
+import ffmpeg from "fluent-ffmpeg";
+import { promisify } from "util";
+import { writeFile, unlink, mkdir } from "fs/promises";
+import { join } from "path";
+import { tmpdir } from "os";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -39,8 +44,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
   }
   
+  // Helper function to generate individual paragraph audio
+  async function generateParagraphAudio(paragraph: any, apiKey: string): Promise<Buffer> {
+    const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${paragraph.voiceId}`;
+    
+    const elevenLabsBody = {
+      text: paragraph.text,
+      model_id: "eleven_multilingual_v2",
+      voice_settings: {
+        stability: paragraph.settings.stability,
+        similarity_boost: paragraph.settings.similarity_boost,
+        style: 0,
+        use_speaker_boost: true
+      }
+    };
+
+    // Add speed and pitch modulation if supported
+    if (paragraph.settings.speed !== 1.0 || paragraph.settings.pitch !== 1.0) {
+      elevenLabsBody.voice_settings = {
+        ...elevenLabsBody.voice_settings,
+        stability: Math.max(0, Math.min(1, paragraph.settings.stability * paragraph.settings.speed)),
+      };
+    }
+
+    const response = await fetch(elevenLabsUrl, {
+      method: 'POST',
+      headers: {
+        'Accept': 'audio/mpeg',
+        'Content-Type': 'application/json',
+        'xi-api-key': apiKey
+      },
+      body: JSON.stringify(elevenLabsBody)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMessage = "Failed to generate speech";
+      
+      if (response.status === 401) {
+        try {
+          const errorJson = JSON.parse(errorText);
+          if (errorJson.detail?.status === "detected_unusual_activity") {
+            errorMessage = "ElevenLabs has temporarily restricted your free tier usage due to unusual activity detection. This may happen if you're using a VPN/proxy or have multiple accounts. Please upgrade to a paid plan or contact ElevenLabs support.";
+          } else {
+            errorMessage = "Invalid API key. Please check your ElevenLabs API key.";
+          }
+        } catch {
+          errorMessage = "Invalid API key. Please check your ElevenLabs API key.";
+        }
+      } else if (response.status === 422) {
+        errorMessage = "Invalid voice ID or request parameters.";
+      } else if (response.status === 429) {
+        errorMessage = "API rate limit exceeded. Please try again later.";
+      } else {
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.detail?.message || errorJson.message || errorMessage;
+        } catch {
+          errorMessage = `API Error (${response.status}): ${errorText}`;
+        }
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    return Buffer.from(await response.arrayBuffer());
+  }
+
+  // Helper function to create silence audio
+  async function createSilenceAudio(durationSeconds: number, tempDir: string): Promise<string> {
+    const silenceFilePath = join(tempDir, `silence_${randomUUID()}.mp3`);
+    
+    return new Promise((resolve, reject) => {
+      ffmpeg()
+        .input('anullsrc=channel_layout=stereo:sample_rate=48000')
+        .inputFormat('lavfi')
+        .duration(durationSeconds)
+        .audioCodec('mp3')
+        .audioQuality(2)
+        .save(silenceFilePath)
+        .on('end', () => resolve(silenceFilePath))
+        .on('error', reject);
+    });
+  }
+
+  // Helper function to combine audio files
+  async function combineAudioFiles(inputFiles: string[], outputFile: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const command = ffmpeg();
+      
+      inputFiles.forEach(file => {
+        command.input(file);
+      });
+      
+      command
+        .on('end', () => resolve())
+        .on('error', (err) => reject(err))
+        .mergeToFile(outputFile, tmpdir());
+    });
+  }
+
   // Generate speech endpoint
   app.post("/api/generate-speech", async (req, res) => {
+    let tempFiles: string[] = [];
+    let tempDir: string | null = null;
+
     try {
       const validatedData = generateSpeechRequestSchema.parse(req.body);
       const { paragraphs, apiKey } = validatedData;
@@ -69,98 +177,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Combine all paragraph texts with silence intervals
-      let combinedText = "";
-      paragraphs.forEach((paragraph, index) => {
-        combinedText += paragraph.text;
-        if (index < paragraphs.length - 1) {
-          const silenceMs = Math.round(paragraph.settings.silenceInterval * 1000);
-          combinedText += ` <break time="${silenceMs}ms"/> `;
-        }
-      });
+      // Create temporary directory for audio processing
+      tempDir = join(tmpdir(), `speech_generation_${randomUUID()}`);
+      await mkdir(tempDir, { recursive: true });
 
-      // Use the first paragraph's voice settings for the combined audio
-      const firstParagraph = paragraphs[0];
+      // Generate individual audio files for each paragraph
+      const audioFiles: string[] = [];
       
-      // Prepare ElevenLabs API request
-      const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${firstParagraph.voiceId}`;
-      
-      const elevenLabsBody = {
-        text: combinedText,
-        model_id: "eleven_multilingual_v2",
-        voice_settings: {
-          stability: firstParagraph.settings.stability,
-          similarity_boost: firstParagraph.settings.similarity_boost,
-          style: 0,
-          use_speaker_boost: true
-        }
-      };
+      for (let i = 0; i < paragraphs.length; i++) {
+        const paragraph = paragraphs[i];
+        
+        // Skip empty paragraphs
+        if (!paragraph.text.trim()) continue;
 
-      // Add speed and pitch modulation if supported
-      if (firstParagraph.settings.speed !== 1.0 || firstParagraph.settings.pitch !== 1.0) {
-        elevenLabsBody.voice_settings = {
-          ...elevenLabsBody.voice_settings,
-          stability: Math.max(0, Math.min(1, firstParagraph.settings.stability * firstParagraph.settings.speed)),
-        };
+        // Generate audio for this paragraph
+        const audioBuffer = await generateParagraphAudio(paragraph, apiKey);
+        
+        if (audioBuffer.length === 0) {
+          throw new Error(`Received empty audio response for paragraph ${i + 1}`);
+        }
+
+        // Save paragraph audio to temp file
+        const paragraphFile = join(tempDir, `paragraph_${i}_${randomUUID()}.mp3`);
+        await writeFile(paragraphFile, audioBuffer);
+        tempFiles.push(paragraphFile);
+        audioFiles.push(paragraphFile);
+
+        // Add silence after paragraph (except for the last one)
+        if (i < paragraphs.length - 1 && paragraph.settings.silenceInterval > 0) {
+          const silenceFile = await createSilenceAudio(paragraph.settings.silenceInterval, tempDir);
+          tempFiles.push(silenceFile);
+          audioFiles.push(silenceFile);
+        }
       }
 
-      const response = await fetch(elevenLabsUrl, {
-        method: 'POST',
-        headers: {
-          'Accept': 'audio/mpeg',
-          'Content-Type': 'application/json',
-          'xi-api-key': apiKey
-        },
-        body: JSON.stringify(elevenLabsBody)
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage = "Failed to generate speech";
-        
-        if (response.status === 401) {
-          try {
-            const errorJson = JSON.parse(errorText);
-            if (errorJson.detail?.status === "detected_unusual_activity") {
-              errorMessage = "ElevenLabs has temporarily restricted your free tier usage due to unusual activity detection. This may happen if you're using a VPN/proxy or have multiple accounts. Please upgrade to a paid plan or contact ElevenLabs support.";
-            } else {
-              errorMessage = "Invalid API key. Please check your ElevenLabs API key.";
-            }
-          } catch {
-            errorMessage = "Invalid API key. Please check your ElevenLabs API key.";
-          }
-        } else if (response.status === 422) {
-          errorMessage = "Invalid voice ID or request parameters.";
-        } else if (response.status === 429) {
-          errorMessage = "API rate limit exceeded. Please try again later.";
-        } else {
-          try {
-            const errorJson = JSON.parse(errorText);
-            errorMessage = errorJson.detail?.message || errorJson.message || errorMessage;
-          } catch {
-            errorMessage = `API Error (${response.status}): ${errorText}`;
-          }
-        }
-        
-        return res.status(400).json({ 
-          success: false, 
-          error: errorMessage 
+      if (audioFiles.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: "No valid paragraphs with text content found"
         });
       }
 
-      // Get audio buffer from response
-      const audioBuffer = Buffer.from(await response.arrayBuffer());
+      // If only one audio file, use it directly
+      let finalAudioBuffer: Buffer;
       
-      if (audioBuffer.length === 0) {
-        return res.status(400).json({ 
-          success: false, 
-          error: "Received empty audio response from ElevenLabs" 
-        });
+      if (audioFiles.length === 1) {
+        finalAudioBuffer = await require('fs/promises').readFile(audioFiles[0]);
+      } else {
+        // Combine all audio files
+        const combinedFile = join(tempDir, `combined_${randomUUID()}.mp3`);
+        tempFiles.push(combinedFile);
+        
+        await combineAudioFiles(audioFiles, combinedFile);
+        finalAudioBuffer = await require('fs/promises').readFile(combinedFile);
       }
 
-      // Store audio file
+      // Store the final audio file
       const filename = `speech_${randomUUID()}.mp3`;
-      await storage.storeAudioFile(filename, audioBuffer);
+      await storage.storeAudioFile(filename, finalAudioBuffer);
 
       // Update word usage after successful generation
       const apiKeyHash = hashApiKey(apiKey);
@@ -197,12 +271,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
             error: "Network error connecting to ElevenLabs API. Please check your internet connection." 
           });
         }
+
+        return res.status(500).json({ 
+          success: false, 
+          error: error.message || "Internal server error while generating speech" 
+        });
       }
 
       res.status(500).json({ 
         success: false, 
         error: "Internal server error while generating speech" 
       });
+    } finally {
+      // Clean up temporary files
+      if (tempFiles.length > 0) {
+        for (const tempFile of tempFiles) {
+          try {
+            await unlink(tempFile);
+          } catch (cleanupError) {
+            console.warn('Failed to cleanup temp file:', tempFile, cleanupError);
+          }
+        }
+      }
+
+      // Clean up temporary directory
+      if (tempDir) {
+        try {
+          await require('fs/promises').rmdir(tempDir);
+        } catch (cleanupError) {
+          console.warn('Failed to cleanup temp directory:', tempDir, cleanupError);
+        }
+      }
     }
   });
 
