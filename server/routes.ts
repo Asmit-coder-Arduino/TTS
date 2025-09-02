@@ -6,7 +6,7 @@ import { randomUUID } from "crypto";
 import { countTotalWords, hashApiKey, getCurrentMonth } from "./utils/wordCounter";
 import ffmpeg from "fluent-ffmpeg";
 import { promisify } from "util";
-import { writeFile, unlink, mkdir } from "fs/promises";
+import { writeFile, unlink, mkdir, readFile, rmdir } from "fs/promises";
 import { join } from "path";
 import { tmpdir } from "os";
 
@@ -113,15 +113,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Helper function to create silence audio
   async function createSilenceAudio(durationSeconds: number, tempDir: string): Promise<string> {
-    const silenceFilePath = join(tempDir, `silence_${randomUUID()}.mp3`);
+    const silenceFilePath = join(tempDir, `silence_${randomUUID()}.wav`);
     
     return new Promise((resolve, reject) => {
       ffmpeg()
         .input('anullsrc=channel_layout=stereo:sample_rate=48000')
         .inputFormat('lavfi')
         .duration(durationSeconds)
-        .audioCodec('mp3')
-        .audioQuality(2)
+        .audioCodec('pcm_s16le')
         .save(silenceFilePath)
         .on('end', () => resolve(silenceFilePath))
         .on('error', reject);
@@ -138,6 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       command
+        .audioCodec('libmp3lame')
         .on('end', () => resolve())
         .on('error', (err) => reject(err))
         .mergeToFile(outputFile, tmpdir());
@@ -222,14 +222,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let finalAudioBuffer: Buffer;
       
       if (audioFiles.length === 1) {
-        finalAudioBuffer = await require('fs/promises').readFile(audioFiles[0]);
+        finalAudioBuffer = await readFile(audioFiles[0]);
       } else {
         // Combine all audio files
         const combinedFile = join(tempDir, `combined_${randomUUID()}.mp3`);
         tempFiles.push(combinedFile);
         
         await combineAudioFiles(audioFiles, combinedFile);
-        finalAudioBuffer = await require('fs/promises').readFile(combinedFile);
+        finalAudioBuffer = await readFile(combinedFile);
       }
 
       // Store the final audio file
@@ -297,7 +297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Clean up temporary directory
       if (tempDir) {
         try {
-          await require('fs/promises').rmdir(tempDir);
+          await rmdir(tempDir);
         } catch (cleanupError) {
           console.warn('Failed to cleanup temp directory:', tempDir, cleanupError);
         }
