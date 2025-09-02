@@ -334,3 +334,18 @@
 ::-webkit-scrollbar-thumb:hover {
   background: var(--accent);
 }
+
+/* Fix dialog animations - remove slide-out animations that cause scrolling */
+.dialog-no-slide[data-state="closed"] {
+  animation: none !important;
+  transform: translate(-50%, -50%) !important;
+  transition: opacity 0.15s ease-out !important;
+  opacity: 0 !important;
+}
+
+.dialog-no-slide[data-state="open"] {
+  animation: none !important;
+  transform: translate(-50%, -50%) !important;
+  transition: opacity 0.15s ease-in !important;
+  opacity: 1 !important;
+}

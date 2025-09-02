@@ -123,7 +123,10 @@ export function SettingsModal({ isOpen, onClose, apiKey, onApiKeyChange }: Setti
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-w-lg glass-card border-2" data-testid="modal-settings">
+      <DialogContent 
+        className="max-w-lg glass-card border-2 dialog-no-slide" 
+        data-testid="modal-settings"
+      >
         <DialogHeader className="text-center pb-6">
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
