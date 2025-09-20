@@ -4,11 +4,18 @@ async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     let errorMessage: string;
     try {
-      const json = await res.json();
+      // Clone the response to avoid "body stream already read" error
+      const clonedRes = res.clone();
+      const json = await clonedRes.json();
       errorMessage = json.error || json.message || res.statusText;
     } catch {
-      const text = await res.text();
-      errorMessage = text || res.statusText;
+      try {
+        // Use original response for text if JSON parsing fails
+        const text = await res.text();
+        errorMessage = text || res.statusText;
+      } catch {
+        errorMessage = res.statusText;
+      }
     }
     throw new Error(errorMessage);
   }
