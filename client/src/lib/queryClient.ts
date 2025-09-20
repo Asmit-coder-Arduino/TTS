@@ -33,8 +33,10 @@ export async function apiRequest(
     credentials: "include",
   });
 
+  // Clone the response before checking it to avoid "body stream already read" error
+  const clonedRes = res.clone();
   await throwIfResNotOk(res);
-  return res;
+  return clonedRes;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
